@@ -31,21 +31,38 @@ const User = mongoose.model('User', userSchema);
 const Progress = mongoose.model('Progress', progressSchema);
 
 app.post('/api/register', async (req, res) => {
-  const { dni, password } = req.body;
-  const hashed = await bcrypt.hash(password, 10);
-  const user = await User.create({ dni, password: hashed });
-  res.json({ success: true });
+  try {
+    const dni = String(req.body.dni);
+    const password = req.body.password;
+
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await User.create({ dni, password: hashed });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Error en registro:', error);
+    res.status(500).json({ error: 'Error al registrar usuario' });
+  }
 });
 
 app.post('/api/login', async (req, res) => {
-  const { dni, password } = req.body;
-  const user = await User.findOne({ dni });
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    return res.status(401).json({ error: 'Credenciales incorrectas' });
+  try {
+    const dni = String(req.body.dni);
+    const password = req.body.password;
+
+    const user = await User.findOne({ dni });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: 'Credenciales incorrectas' });
+    }
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+    res.json({ token });
+  } catch (error) {
+    console.error('❌ Error en login:', error);
+    res.status(500).json({ error: 'Error al iniciar sesión' });
   }
-  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-  res.json({ token });
 });
+
 
 app.post('/api/progress', async (req, res) => {
   const { token, career, states } = req.body;
