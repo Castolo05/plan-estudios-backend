@@ -65,22 +65,44 @@ app.post('/api/login', async (req, res) => {
 
 
 app.post('/api/progress', async (req, res) => {
-  const { token, career, states } = req.body;
-  const { userId } = jwt.verify(token, process.env.JWT_SECRET);
-  await Progress.findOneAndUpdate(
-    { userId, career },
-    { states },
-    { upsert: true }
-  );
-  res.json({ success: true });
+  try {
+    const { token, career, states } = req.body;
+    if (!token || !career || !states) {
+      return res.status(400).json({ error: "Faltan datos" });
+    }
+
+    const { userId } = jwt.verify(token, process.env.JWT_SECRET);
+
+    await Progress.findOneAndUpdate(
+      { userId, career },
+      { states },
+      { upsert: true, new: true }
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error al guardar progreso:", err);
+    res.status(500).json({ error: "Error al guardar progreso" });
+  }
 });
 
+
 app.post('/api/load', async (req, res) => {
-  const { token, career } = req.body;
-  const { userId } = jwt.verify(token, process.env.JWT_SECRET);
-  const progress = await Progress.findOne({ userId, career });
-  res.json({ states: progress?.states || {} });
+  try {
+    const { token, career } = req.body;
+    if (!token || !career) {
+      return res.status(400).json({ error: "Faltan datos" });
+    }
+
+    const { userId } = jwt.verify(token, process.env.JWT_SECRET);
+    const progress = await Progress.findOne({ userId, career });
+    res.json({ states: progress?.states || {} });
+  } catch (err) {
+    console.error("❌ Error al cargar progreso:", err);
+    res.status(500).json({ error: "Error al cargar progreso" });
+  }
 });
+
 
 app.get('/api/ping', (req, res) => {
   res.send("pong");
