@@ -1,3 +1,6 @@
+console.log("✅ Inicio del servidor - server.js cargado");
+
+
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
